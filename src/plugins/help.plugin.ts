@@ -19,6 +19,7 @@ export default class HelpPlugin{
                     "/unban <目标> - 解除禁言",
                     "/blacklist - 管理用户/群黑名单",
                     "/admin - 管理机器人管理员",
+                    "/alias - 管理指令别名",
                 );
             }
             ctx.reply(

@@ -80,8 +80,11 @@ export default class BlacklistPlugin{
 
     private usage(ctx:SnowLumaEventContext,event:OneBotMessageEvent){
         ctx.reply(
-            text("参数检定不合法，用法").br().br()
-            .text("/blacklist add|remove user|group <QQ/群号>").br()
+            text("参数检定未通过").br().br()
+            .text("/blacklist add user <QQ>").br()
+            .text("/blacklist add group <群号>").br()
+            .text("/blacklist remove user <QQ>").br()
+            .text("/blacklist remove group <群号>").br()
             .text("/blacklist list").reply(event.message_id)
         );
     }

@@ -72,8 +72,9 @@ export default class AdminManagePlugin{
 
     private usage(ctx:SnowLumaEventContext,event:OneBotMessageEvent){
         ctx.reply(
-            text("参数检定不合法，用法").br().br()
-            .text("/admin add super|admin <QQ>").br()
+            text("参数检定未通过").br().br()
+            .text("/admin add admin <QQ>").br()
+            .text("/admin add super <QQ>").br()
             .text("/admin remove <QQ>").br()
             .text("/admin list").reply(event.message_id)
         );

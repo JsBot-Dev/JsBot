@@ -23,7 +23,7 @@ export default class AdminPlugin{
             const args = match.args;
             if(args.length<1){
                 ctx.reply(
-                    text("参数检定不合法，用法").br().br()
+                    text("参数检定未通过").br().br()
                     .text("/ban <目标用户> <禁言时间>(默认为10分钟)")
                     .reply(event.message_id)
                 )
@@ -97,7 +97,7 @@ export default class AdminPlugin{
             const args = match.args;
             if(args.length<1){
                 ctx.reply(
-                    text("参数检定不合法，用法").br().br()
+                    text("参数检定未通过").br().br()
                     .text("/unban <目标用户>")
                     .reply(event.message_id)
                 )
