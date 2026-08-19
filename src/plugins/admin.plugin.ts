@@ -1,6 +1,6 @@
-import { fromCQString, isGroupMessageEvent, SnowLumaWebSocketClient, text} from "@snowluma/sdk";
+import { isGroupMessageEvent, SnowLumaWebSocketClient, text} from "@snowluma/sdk";
 import { EnableGroup, DefaultBanDuration } from "./config/admin.plugin.config";
-import { RefuseCommand } from "../utils/tools";
+import { AtToNumber, RefuseCommand } from "../utils/tools";
 
 export default class AdminPlugin{
     public register(
@@ -31,7 +31,7 @@ export default class AdminPlugin{
                 return;
             }
 
-            const userNumber = this.AtToNumber(args[0]);
+            const userNumber = AtToNumber(args[0]);
             if(userNumber == null){
                 ctx.reply(
                     text("目标用户不存在").reply(event.message_id)
@@ -105,7 +105,7 @@ export default class AdminPlugin{
                 return;
             }
 
-            const userNumber = this.AtToNumber(args[0]);
+            const userNumber = AtToNumber(args[0]);
             if(userNumber == null){
                 ctx.reply(
                     text("目标用户不存在").reply(event.message_id)
@@ -149,14 +149,5 @@ export default class AdminPlugin{
         })
         const userRole = userInfo.data.role || 'member'
         return userRole === 'owner' || userRole === 'admin'
-    }
-
-    private AtToNumber(arg:string){
-        if (/^\d+$/.test(arg)) return Number(arg);           
-        const at = fromCQString(arg).toArray().find(s => s.type === 'at');
-        if (at && at.type === 'at' && at.data.qq !== 'all') { 
-            return Number(at.data.qq);                        
-        }
-        return null;
     }
 }
