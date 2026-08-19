@@ -10,7 +10,7 @@ const client = new SnowLumaWebSocketClient({
 })
 
 for(const plugin of plugins){
-    plugin(client)
+    plugin.register(client)
 }
  
 await client.connect();
