@@ -5,6 +5,7 @@ export default class HelpPlugin{
     public register(bot:SnowLumaWebSocketClient):void{
         bot.command('help',async(event,ctx)=>{
             const lines = [
+                "帮助菜单",
                 "/help - 查看帮助",
                 "/info - 机器人信息",
                 "/role - 查看你的权限",
