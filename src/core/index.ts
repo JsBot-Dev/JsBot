@@ -21,7 +21,9 @@ export type {
     EventNext,
     OneBotGroupMessageEvent,
     OneBotMessageEvent,
+    OneBotNoticeEvent,
     OneBotPrivateMessageEvent,
+    OneBotRequestEvent,
     SnowLumaEvent,
     SnowLumaEventContext,
 } from '@snowluma/sdk';
