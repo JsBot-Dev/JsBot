@@ -7,6 +7,7 @@
 ## 特性
 
 - **装饰器插件系统** — 用 `@Command` / `@OnGroupMessage` 等装饰器声明处理器,一行挂载
+- **管理员指令标记** — `@AdminCommand()` 配合 `@Command` 声明,内核自动为命中指令附带 `event.isAdmin`,方便中间件鉴权
 - **即插即用** — 插件实现 `onLoad` / `onUnload` 生命周期钩子,支持热注销
 - **类型安全** — 全量暴露 SDK 的 OneBot 动作 API 与事件类型,`tsc` 严格模式通过
 - **多级配置** — 默认值 → `bot.config.json` → 环境变量,自动合并与校验
@@ -61,11 +62,11 @@ src/
 
 ```ts
 import { Plugin, Command, OnGroupMessage } from '../core';
-import type { OneBotGroupMessageEvent, OneBotMessageEvent, SnowLumaEventContext } from '../core';
+import type { CommandContext, OneBotGroupMessageEvent, OneBotMessageEvent, SnowLumaEventContext } from '../core';
 
 export class PingPlugin extends Plugin {
     @Command('ping')
-    ping(event: OneBotMessageEvent, ctx: SnowLumaEventContext) {
+    ping(event: OneBotMessageEvent, ctx: CommandContext) {
         ctx.reply('pong');
     }
 
@@ -79,6 +80,16 @@ export class PingPlugin extends Plugin {
     async onLoad() {
         this.bot.logger.info('PingPlugin 已加载');
     }
+}
+```
+
+管理员指令:加 `@AdminCommand()` 标记后,命中该指令的消息事件自动带 `event.isAdmin`(消息事件类型已统一注入该字段),在中间件里据此鉴权即可:
+
+```ts
+@AdminCommand()
+@Command('ban')
+ban(event: OneBotMessageEvent, ctx: CommandContext) {
+    // event.isAdmin === true
 }
 ```
 

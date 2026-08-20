@@ -1,4 +1,5 @@
 import { SnowLumaWebSocketClient } from '@snowluma/sdk';
+import { adminMarkerMiddleware } from './admin';
 import type { BotConfig } from './config';
 import { Logger } from './logger';
 import { Plugin } from './plugin';
@@ -38,6 +39,7 @@ export class JsBot {
             reconnect: config.reconnect,
         });
         this.registry = new PluginRegistry(this.client, this.logger);
+        this.client.use(adminMarkerMiddleware);
         this.bindClientEvents();
     }
 

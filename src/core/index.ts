@@ -1,10 +1,14 @@
+import './events';
+
 export { JsBot } from './bot';
 export type { BotConfig } from './config';
 export { loadConfig } from './config';
 export { Logger } from './logger';
 export type { LogLevel } from './logger';
 export {
+    AdminCommand,
     Command,
+    getAdminCommands,
     OnGroupMessage,
     OnMessage,
     OnMiddleware,
@@ -13,6 +17,7 @@ export {
     OnRequest,
 } from './decorators';
 export type { HandlerKind, HandlerMeta } from './decorators';
+export { adminMarkerMiddleware } from './admin';
 export { Plugin } from './plugin';
 export { PluginRegistry } from './registry';
 

@@ -43,6 +43,11 @@ export interface HandlerMeta {
  */
 const METHOD_METADATA = new WeakMap<Function, HandlerMeta[]>();
 
+/** 所有 @Command 注册的命令(装饰器执行时填充),供管理员指令匹配使用。 */
+const ALL_COMMANDS: Array<{ fn: Function; spec: string | RegExp; options?: CommandOptions }> = [];
+/** 被 @AdminCommand 标记过的方法。 */
+const ADMIN_METHODS = new Set<Function>();
+
 function addMeta(value: Function, meta: HandlerMeta): void {
     const list = METHOD_METADATA.get(value) ?? [];
     list.push(meta);
@@ -83,7 +88,28 @@ export function getHandlerMeta(target: object): Array<{ key: string; value: Func
 export function Command(command: string | RegExp, options?: CommandOptions) {
     return (value: Function, context: ClassMethodDecoratorContext): void => {
         addMeta(value, { kind: 'command', propertyKey: String(context.name), spec: command, options });
+        ALL_COMMANDS.push({ fn: value, spec: command, options });
     };
+}
+
+/**
+ * 标记方法为管理员指令,需与 @Command 搭配使用:
+ * ```ts
+ * @AdminCommand()
+ * @Command('ban')
+ * ban(event: OneBotMessageEvent, ctx: CommandContext) { ... }
+ * ```
+ * 命中该指令的消息事件会被内核中间件自动附带 `isAdmin: true`。
+ */
+export function AdminCommand() {
+    return (value: Function, _context: ClassMethodDecoratorContext): void => {
+        ADMIN_METHODS.add(value);
+    };
+}
+
+/** 收集被 @AdminCommand 标记的命令 spec,供中间件匹配。 */
+export function getAdminCommands(): Array<{ spec: string | RegExp; options?: CommandOptions }> {
+    return ALL_COMMANDS.filter((c) => ADMIN_METHODS.has(c.fn)).map(({ spec, options }) => ({ spec, options }));
 }
 
 /** 注册一个消息处理器(群聊 + 私聊)。 */
