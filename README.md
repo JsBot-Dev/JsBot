@@ -87,7 +87,7 @@ export class PingPlugin extends Plugin {
 export const builtinPlugins = [PingPlugin];
 ```
 
-完整的插件编写文档见 [docs/插件开发/00-导读.md](./docs/插件开发/00-导读.md)。
+完整的插件编写文档见 [docs/plugin/00-intro.md](https://github.com/JsBot-Dev/JsBot-Docs/blob/main/plugin/00-intro.md)。
 
 ## 常用命令
 
