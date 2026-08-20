@@ -1,0 +1,7 @@
+{
+    "baseUrl": "ws://127.0.0.1:3001/",
+    "accessToken": "your-token",
+    "reconnect": true,
+    "logLevel": "info",
+    "plugins": []
+}
