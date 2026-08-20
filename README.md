@@ -7,7 +7,7 @@
 ## 特性
 
 - **装饰器插件系统** — 用 `@Command` / `@OnGroupMessage` 等装饰器声明处理器,一行挂载
-- **管理员指令标记** — `@AdminCommand()` 配合 `@Command` 声明,内核自动为命中指令附带 `event.isAdmin`,方便中间件鉴权
+- **管理员指令标记** — `@AdminCommand()` / `@SuperAdminCommand()` 配合 `@Command` 声明,内核自动为命中指令附带 `event.adminLevel`,方便中间件鉴权
 - **即插即用** — 插件实现 `onLoad` / `onUnload` 生命周期钩子,支持热注销
 - **类型安全** — 全量暴露 SDK 的 OneBot 动作 API 与事件类型,`tsc` 严格模式通过
 - **多级配置** — 默认值 → `bot.config.json` → 环境变量,自动合并与校验
@@ -39,6 +39,8 @@ AccessToken=your-token
 | `accessToken` | `AccessToken`   | 访问令牌                                      |
 | `reconnect`   | —               | 断线重连策略(`true` / `false` / 配置对象)      |
 | `logLevel`    | `LogLevel`      | `debug` / `info` / `warn` / `error`,默认 `info` |
+| `admins`      | `Admins`        | 管理员 QQ 名单,逗号分隔                       |
+| `superAdmins` | `SuperAdmins`   | 超级管理员 QQ 名单,逗号分隔(隐含管理员权限)   |
 | `plugins`     | —               | 启用的插件列表(预留)                           |
 
 参考 [`bot.config.example.json`](./bot.config.example.json)。
@@ -83,13 +85,19 @@ export class PingPlugin extends Plugin {
 }
 ```
 
-管理员指令:加 `@AdminCommand()` 标记后,命中该指令的消息事件自动带 `event.isAdmin`(消息事件类型已统一注入该字段),在中间件里据此鉴权即可:
+管理员指令:加 `@AdminCommand()` / `@SuperAdminCommand()` 标记后,命中该指令的消息事件自动带 `event.adminLevel`(消息事件类型已统一注入该字段),在中间件里据此鉴权即可:
 
 ```ts
 @AdminCommand()
 @Command('ban')
 ban(event: OneBotMessageEvent, ctx: CommandContext) {
-    // event.isAdmin === true
+    // 管理员指令:event.adminLevel === 'admin'
+}
+
+@SuperAdminCommand()
+@Command('reset')
+reset(event: OneBotMessageEvent, ctx: CommandContext) {
+    // 超管指令:event.adminLevel === 'super'
 }
 ```
 

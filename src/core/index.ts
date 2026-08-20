@@ -15,8 +15,9 @@ export {
     OnNotice,
     OnPrivateMessage,
     OnRequest,
+    SuperAdminCommand,
 } from './decorators';
-export type { HandlerKind, HandlerMeta } from './decorators';
+export type { AdminLevel, HandlerKind, HandlerMeta } from './decorators';
 export { adminMarkerMiddleware } from './admin';
 export { Plugin } from './plugin';
 export { PluginRegistry } from './registry';

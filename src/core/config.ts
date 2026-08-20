@@ -14,6 +14,10 @@ export interface BotConfig {
     reconnect: boolean | ReconnectOptions;
     /** 日志级别。 */
     logLevel: LogLevel;
+    /** 管理员 QQ 名单。 */
+    admins: number[];
+    /** 超级管理员 QQ 名单(隐含管理员权限)。 */
+    superAdmins: number[];
     /** 启用的插件列表(按类名)。 */
     plugins: string[];
 }
@@ -24,6 +28,8 @@ interface FileConfig {
     accessToken?: string;
     reconnect?: boolean | ReconnectOptions;
     logLevel?: LogLevel;
+    admins?: number[];
+    superAdmins?: number[];
     plugins?: string[];
 }
 
@@ -33,6 +39,8 @@ const DEFAULTS: BotConfig = {
     accessToken: '',
     reconnect: true,
     logLevel: 'info',
+    admins: [],
+    superAdmins: [],
     plugins: [],
 };
 
@@ -80,7 +88,19 @@ function readEnvConfig(): FileConfig {
     if (process.env.BaseUrl) config.baseUrl = process.env.BaseUrl;
     if (process.env.AccessToken) config.accessToken = process.env.AccessToken;
     if (process.env.LogLevel) config.logLevel = process.env.LogLevel as LogLevel;
+    if (process.env.Admins) config.admins = parseIdList(process.env.Admins);
+    if (process.env.SuperAdmins) config.superAdmins = parseIdList(process.env.SuperAdmins);
     return config;
+}
+
+/** 把逗号分隔的 QQ 名单解析为数字数组,忽略空项与非法值。 */
+function parseIdList(raw: string): number[] {
+    return raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => Number(s))
+        .filter((n) => Number.isInteger(n) && n > 0);
 }
 
 /** 校验必填项与枚举值,失败时抛出聚合错误。 */

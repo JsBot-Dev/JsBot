@@ -43,10 +43,13 @@ export interface HandlerMeta {
  */
 const METHOD_METADATA = new WeakMap<Function, HandlerMeta[]>();
 
+/** 管理员指令的权限级别。 */
+export type AdminLevel = 'admin' | 'super';
+
 /** 所有 @Command 注册的命令(装饰器执行时填充),供管理员指令匹配使用。 */
 const ALL_COMMANDS: Array<{ fn: Function; spec: string | RegExp; options?: CommandOptions }> = [];
-/** 被 @AdminCommand 标记过的方法。 */
-const ADMIN_METHODS = new Set<Function>();
+/** 被 @AdminCommand / @SuperAdminCommand 标记过的方法及其级别。 */
+const ADMIN_METHODS = new Map<Function, AdminLevel>();
 
 function addMeta(value: Function, meta: HandlerMeta): void {
     const list = METHOD_METADATA.get(value) ?? [];
@@ -99,17 +102,40 @@ export function Command(command: string | RegExp, options?: CommandOptions) {
  * @Command('ban')
  * ban(event: OneBotMessageEvent, ctx: CommandContext) { ... }
  * ```
- * 命中该指令的消息事件会被内核中间件自动附带 `isAdmin: true`。
+ * 命中该指令的消息事件会被内核中间件自动附带 `adminLevel: 'admin'`。
  */
 export function AdminCommand() {
     return (value: Function, _context: ClassMethodDecoratorContext): void => {
-        ADMIN_METHODS.add(value);
+        ADMIN_METHODS.set(value, 'admin');
     };
 }
 
-/** 收集被 @AdminCommand 标记的命令 spec,供中间件匹配。 */
-export function getAdminCommands(): Array<{ spec: string | RegExp; options?: CommandOptions }> {
-    return ALL_COMMANDS.filter((c) => ADMIN_METHODS.has(c.fn)).map(({ spec, options }) => ({ spec, options }));
+/**
+ * 标记方法为超级管理员指令,需与 @Command 搭配使用:
+ * ```ts
+ * @SuperAdminCommand()
+ * @Command('reset')
+ * reset(event: OneBotMessageEvent, ctx: CommandContext) { ... }
+ * ```
+ * 命中该指令的消息事件会被内核中间件自动附带 `adminLevel: 'super'`。
+ */
+export function SuperAdminCommand() {
+    return (value: Function, _context: ClassMethodDecoratorContext): void => {
+        ADMIN_METHODS.set(value, 'super');
+    };
+}
+
+/** 收集被标记为管理员/超管指令的命令 spec 与级别,供中间件匹配。 */
+export function getAdminCommands(): Array<{
+    spec: string | RegExp;
+    options?: CommandOptions;
+    level: AdminLevel;
+}> {
+    return ALL_COMMANDS.filter((c) => ADMIN_METHODS.has(c.fn)).map((c) => ({
+        spec: c.spec,
+        options: c.options,
+        level: ADMIN_METHODS.get(c.fn) as AdminLevel,
+    }));
 }
 
 /** 注册一个消息处理器(群聊 + 私聊)。 */

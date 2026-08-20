@@ -3,5 +3,7 @@
     "accessToken": "your-token",
     "reconnect": true,
     "logLevel": "info",
+    "admins": [],
+    "superAdmins": [],
     "plugins": []
 }
