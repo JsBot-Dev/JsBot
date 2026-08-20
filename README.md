@@ -61,16 +61,17 @@ src/
 
 ```ts
 import { Plugin, Command, OnGroupMessage } from '../core';
+import type { OneBotGroupMessageEvent, OneBotMessageEvent, SnowLumaEventContext } from '../core';
 
 export class PingPlugin extends Plugin {
     @Command('ping')
-    ping(ctx) {
+    ping(event: OneBotMessageEvent, ctx: SnowLumaEventContext) {
         ctx.reply('pong');
     }
 
     @OnGroupMessage()
-    onGroup(ctx) {
-        if (ctx.event.raw_message === 'hello') {
+    onGroup(event: OneBotGroupMessageEvent, ctx: SnowLumaEventContext) {
+        if (event.raw_message === 'hello') {
             ctx.reply('Hello!');
         }
     }
