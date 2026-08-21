@@ -1,5 +1,6 @@
 import type { OneBotGroupMessageEvent, OneBotPrivateMessageEvent } from '@snowluma/sdk';
 import type { AdminLevel } from './decorators';
+import type { CooldownScope } from './cooldown';
 
 /**
  * SDK 消息事件类型增强:统一为所有消息事件注入 `adminLevel` 字段。
@@ -8,9 +9,17 @@ import type { AdminLevel } from './decorators';
 declare module '@snowluma/sdk' {
     interface OneBotGroupMessageEvent {
         adminLevel?: AdminLevel;
+        onCooldown?: boolean;
+        onCooldownRemaining?: number;
+        onCooldownMessage?: string;
+        onCooldownScope?: CooldownScope;
     }
     interface OneBotPrivateMessageEvent {
         adminLevel?: AdminLevel;
+        onCooldown?: boolean;
+        onCooldownRemaining?: number;
+        onCooldownMessage?: string;
+        onCooldownScope?: CooldownScope;
     }
 }
 

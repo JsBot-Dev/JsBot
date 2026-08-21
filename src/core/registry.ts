@@ -41,63 +41,87 @@ export class PluginRegistry {
         const unsubs: Array<() => void> = [];
         const entries = getHandlerMeta(Object.getPrototypeOf(plugin));
 
+        let commandCount = 0;
+        let eventCount = 0;
+        let middlewareCount = 0;
+
         for (const { key, value, metas } of entries) {
             const handler = (value as Handler).bind(plugin);
 
             for (const meta of metas) {
+                let unsub: () => void;
+                const startTime = Date.now();
+
                 switch (meta.kind) {
-                    case 'command':
-                        unsubs.push(
-                            this.client.command(
-                                meta.spec as string | RegExp,
-                                handler as CommandHandler,
-                                meta.options,
-                            ),
+                    case 'command': {
+                        const spec = meta.spec as string | RegExp;
+                        unsub = this.client.command(spec, handler as CommandHandler, meta.options);
+                        this.logger.debug(
+                            `${plugin.name} 注册命令: ${key} -> ${typeof spec === 'string' ? spec : spec.source} (选项: ${JSON.stringify(meta.options ?? {})})`
                         );
+                        commandCount++;
                         break;
+                    }
                     case 'message':
-                        unsubs.push(this.client.onMessage(handler as EventHandler));
+                        unsub = this.client.onMessage(handler as EventHandler);
+                        this.logger.debug(`${plugin.name} 注册消息处理器: ${key}`);
+                        eventCount++;
                         break;
                     case 'group':
-                        unsubs.push(this.client.onGroupMessage(handler as EventHandler));
+                        unsub = this.client.onGroupMessage(handler as EventHandler);
+                        this.logger.debug(`${plugin.name} 注册群消息处理器: ${key}`);
+                        eventCount++;
                         break;
                     case 'private':
-                        unsubs.push(this.client.onPrivateMessage(handler as EventHandler));
+                        unsub = this.client.onPrivateMessage(handler as EventHandler);
+                        this.logger.debug(`${plugin.name} 注册私聊处理器: ${key}`);
+                        eventCount++;
                         break;
-                    case 'notice':
-                        unsubs.push(
-                            meta.type
-                                ? this.client.onNotice(meta.type, handler as EventHandler)
-                                : this.client.onNotice(handler as EventHandler),
-                        );
+                    case 'notice': {
+                        const typeStr = meta.type ?? 'all';
+                        unsub = meta.type
+                            ? this.client.onNotice(meta.type, handler as EventHandler)
+                            : this.client.onNotice(handler as EventHandler);
+                        this.logger.debug(`${plugin.name} 注册通知处理器: ${key} (类型: ${typeStr})`);
+                        eventCount++;
                         break;
-                    case 'request':
-                        unsubs.push(
-                            meta.type
-                                ? this.client.onRequest(meta.type, handler as EventHandler)
-                                : this.client.onRequest(handler as EventHandler),
-                        );
+                    }
+                    case 'request': {
+                        const typeStr = meta.type ?? 'all';
+                        unsub = meta.type
+                            ? this.client.onRequest(meta.type, handler as EventHandler)
+                            : this.client.onRequest(handler as EventHandler);
+                        this.logger.debug(`${plugin.name} 注册请求处理器: ${key} (类型: ${typeStr})`);
+                        eventCount++;
                         break;
+                    }
                     case 'middleware':
-                        unsubs.push(this.client.use(handler as EventMiddleware));
+                        unsub = this.client.use(handler as EventMiddleware);
+                        this.logger.debug(`${plugin.name} 注册中间件: ${key}`);
+                        middlewareCount++;
                         break;
                 }
 
-                this.logger.debug(`${plugin.name} 注册 ${meta.kind} 处理器: ${key}`);
+                if (unsub) {
+                    unsubs.push(unsub);
+                    this.logger.debug(`${plugin.name} ${meta.kind} 注册耗时: ${Date.now() - startTime}ms`);
+                }
             }
         }
 
         this.unsubscribers.set(plugin, unsubs);
+        this.logger.info(`${plugin.name} 注册完成: ${commandCount} 命令, ${eventCount} 事件, ${middlewareCount} 中间件`);
     }
 
     /** 注销一个插件:调用所有记录的注销函数,移除其处理器。 */
     unregister(plugin: Plugin): void {
         const unsubs = this.unsubscribers.get(plugin);
         if (!unsubs) return;
+        const startTime = Date.now();
         for (const unsub of unsubs) {
             unsub();
         }
         this.unsubscribers.delete(plugin);
-        this.logger.debug(`${plugin.name} 已注销`);
+        this.logger.debug(`${plugin.name} 已注销 (${unsubs.length} 个处理器, 耗时 ${Date.now() - startTime}ms)`);
     }
 }

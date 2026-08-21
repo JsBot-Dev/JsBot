@@ -1,4 +1,5 @@
 import type { JsBot } from './bot';
+import { Logger } from './logger';
 
 /**
  * 插件基类。
@@ -22,8 +23,12 @@ export abstract class Plugin {
     /** 插件名,默认取类名。 */
     readonly name: string;
 
+    /** 插件专用日志器,自动带插件名上下文。 */
+    readonly logger: Logger;
+
     constructor(protected readonly bot: JsBot) {
         this.name = this.constructor.name;
+        this.logger = bot.logger.child({ module: `plugin:${this.name}` });
     }
 
     onLoad?(): void | Promise<void>;

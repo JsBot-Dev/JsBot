@@ -1,8 +1,10 @@
 import type { JsBot } from '../core/bot';
 import type { Plugin } from '../core/plugin';
 import { BotAdminPlugin } from './bot.admin';
+import CoolDownPlugin from './cooldown';
 import { EchoPlugin } from './echo';
 import { HelpPlugin } from './help';
+import LikePlugin from './like';
 
 /**
  * 内置插件列表。
@@ -12,6 +14,8 @@ import { HelpPlugin } from './help';
  */
 export const builtinPlugins: Array<new (bot: JsBot) => Plugin> = [
     BotAdminPlugin,
+    CoolDownPlugin,
     EchoPlugin,
     HelpPlugin,
+    LikePlugin,
 ];

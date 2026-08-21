@@ -3,8 +3,8 @@ import './events';
 export { JsBot } from './bot';
 export type { BotConfig } from './config';
 export { loadConfig } from './config';
-export { Logger } from './logger';
-export type { LogLevel } from './logger';
+export { Logger, createLogger } from './logger';
+export type { LogLevel, LoggerOptions } from './logger';
 export {
     AdminCommand,
     Command,
@@ -16,8 +16,14 @@ export {
     OnPrivateMessage,
     OnRequest,
     SuperAdminCommand,
+    Cooldown,
+    getCooldownCommands,
+    cooldownMiddleware,
+    clearCooldown,
+    getCooldownRemaining,
+    invalidateCooldownCache,
 } from './decorators';
-export type { AdminLevel, HandlerKind, HandlerMeta } from './decorators';
+export type { AdminLevel, HandlerKind, HandlerMeta, CooldownScope, CooldownMeta } from './decorators';
 export { adminMarkerMiddleware } from './admin';
 export { Plugin } from './plugin';
 export { PluginRegistry } from './registry';

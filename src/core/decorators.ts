@@ -1,4 +1,8 @@
 import type { CommandOptions } from '@snowluma/sdk';
+import { Logger } from './logger';
+import { Cooldown, type CooldownScope, type CooldownMeta, getCooldownCommands, cooldownMiddleware, clearCooldown, getCooldownRemaining, invalidateCooldownCache } from './cooldown';
+
+const decoratorLogger = new Logger({ module: 'decorators', level: 'debug' });
 
 /**
  * 处理器种类。
@@ -47,14 +51,22 @@ const METHOD_METADATA = new WeakMap<Function, HandlerMeta[]>();
 export type AdminLevel = 'admin' | 'super';
 
 /** 所有 @Command 注册的命令(装饰器执行时填充),供管理员指令匹配使用。 */
-const ALL_COMMANDS: Array<{ fn: Function; spec: string | RegExp; options?: CommandOptions }> = [];
+export const ALL_COMMANDS: Array<{ fn: Function; spec: string | RegExp; options?: CommandOptions }> = [];
 /** 被 @AdminCommand / @SuperAdminCommand 标记过的方法及其级别。 */
 const ADMIN_METHODS = new Map<Function, AdminLevel>();
+/** 被 @Cooldown 标记过的方法及其配置。 */
+const COOLDOWN_METHODS = new Map<Function, { seconds: number; scope?: CooldownScope; message?: string }>();
+
+/** 内部导出：供 cooldown.ts 读取带冷却标记的方法 */
+export function getCooldownMethods(): typeof COOLDOWN_METHODS {
+    return COOLDOWN_METHODS;
+}
 
 function addMeta(value: Function, meta: HandlerMeta): void {
     const list = METHOD_METADATA.get(value) ?? [];
     list.push(meta);
     METHOD_METADATA.set(value, list);
+    decoratorLogger.debug(`装饰器元数据: ${meta.kind} -> ${meta.propertyKey}${meta.spec ? ` (${String(meta.spec)})` : ''}`);
 }
 
 /**
@@ -84,6 +96,7 @@ export function getHandlerMeta(target: object): Array<{ key: string; value: Func
         }
     }
 
+    decoratorLogger.debug(`元数据收集完成: ${result.length} 个处理器`);
     return result;
 }
 
@@ -107,6 +120,7 @@ export function Command(command: string | RegExp, options?: CommandOptions) {
 export function AdminCommand() {
     return (value: Function, _context: ClassMethodDecoratorContext): void => {
         ADMIN_METHODS.set(value, 'admin');
+        decoratorLogger.debug(`管理员指令标记: ${value.name || 'anonymous'} -> admin`);
     };
 }
 
@@ -122,6 +136,7 @@ export function AdminCommand() {
 export function SuperAdminCommand() {
     return (value: Function, _context: ClassMethodDecoratorContext): void => {
         ADMIN_METHODS.set(value, 'super');
+        decoratorLogger.debug(`超级管理员指令标记: ${value.name || 'anonymous'} -> super`);
     };
 }
 
@@ -131,11 +146,12 @@ export function getAdminCommands(): Array<{
     options?: CommandOptions;
     level: AdminLevel;
 }> {
-    return ALL_COMMANDS.filter((c) => ADMIN_METHODS.has(c.fn)).map((c) => ({
+    const admins = ALL_COMMANDS.filter((c) => ADMIN_METHODS.has(c.fn)).map((c) => ({
         spec: c.spec,
         options: c.options,
         level: ADMIN_METHODS.get(c.fn) as AdminLevel,
     }));
+    return admins;
 }
 
 /** 注册一个消息处理器(群聊 + 私聊)。 */
@@ -185,3 +201,6 @@ export function OnMiddleware() {
         addMeta(value, { kind: 'middleware', propertyKey: String(context.name) });
     };
 }
+
+// 重新导出冷却相关 API
+export { Cooldown, type CooldownScope, type CooldownMeta, getCooldownCommands, cooldownMiddleware, clearCooldown, getCooldownRemaining, invalidateCooldownCache };

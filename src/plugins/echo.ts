@@ -5,21 +5,21 @@ import type { CommandContext, CommandMatch, OneBotMessageEvent } from "../core";
 export class EchoPlugin extends Plugin{
     @AdminCommand()
     @Command('test')
-    test(
+    async test(
         event:OneBotMessageEvent,
         ctx:CommandContext,
         match:CommandMatch,
     ){
-        ctx.reply(match.rest);
+        await ctx.reply(match.rest);
     }
 
     @AdminCommand()
     @Command('test.raw')
-    testRaw(
+    async testRaw(
         event:OneBotMessageEvent,
         ctx:CommandContext,
         match:CommandMatch,
     ){
-        ctx.reply(text(match.rest));
+        await ctx.reply(text(match.rest));
     }
 }

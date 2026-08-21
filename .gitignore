@@ -1,4 +1,4 @@
 node_modules
 .env
 docs
-bot.config.json
+*.config.json

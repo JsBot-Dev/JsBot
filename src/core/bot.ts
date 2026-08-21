@@ -1,5 +1,6 @@
 import { SnowLumaWebSocketClient } from '@snowluma/sdk';
 import { adminMarkerMiddleware } from './admin';
+import { cooldownMiddleware } from './cooldown';
 import type { BotConfig } from './config';
 import { Logger } from './logger';
 import { Plugin } from './plugin';
@@ -32,14 +33,15 @@ export class JsBot {
 
     constructor(config: BotConfig) {
         this.config = config;
-        this.logger = new Logger(config.logLevel);
+        this.logger = new Logger({ level: config.logLevel, module: 'bot' });
         this.client = new SnowLumaWebSocketClient({
             url: config.baseUrl,
             accessToken: config.accessToken,
             reconnect: config.reconnect,
         });
-        this.registry = new PluginRegistry(this.client, this.logger);
+        this.registry = new PluginRegistry(this.client, this.logger.child({ module: 'registry' }));
         this.client.use(adminMarkerMiddleware);
+        this.client.use(cooldownMiddleware);
         this.bindClientEvents();
     }
 
@@ -48,7 +50,10 @@ export class JsBot {
      * 支持链式调用:`bot.use(A).use(B)`。
      */
     use<T extends Plugin>(ctor: new (bot: JsBot) => T): this {
-        this.plugins.push(new ctor(this));
+        const startTime = Date.now();
+        const plugin = new ctor(this);
+        this.plugins.push(plugin);
+        this.logger.debug(`插件实例化: ${plugin.name} (耗时 ${Date.now() - startTime}ms)`);
         return this;
     }
 
@@ -56,41 +61,59 @@ export class JsBot {
     async start(): Promise<void> {
         if (this.started) return;
 
+        const startTime = Date.now();
+        this.logger.info(`正在加载 ${this.plugins.length} 个插件...`);
+
         for (const plugin of this.plugins) {
+            const pluginStart = Date.now();
+            this.logger.debug(`插件加载开始: ${plugin.name}`);
             await plugin.onLoad?.();
             this.registry.register(plugin);
+            this.logger.debug(`插件加载完成: ${plugin.name} (耗时 ${Date.now() - pluginStart}ms)`);
         }
 
+        this.logger.info(`所有插件加载完成 (耗时 ${Date.now() - startTime}ms)`);
+
+        this.logger.debug(`连接中 ${this.config.baseUrl}...`);
         await this.client.connect();
         this.started = true;
-        this.logger.info(`Bot 已启动 (${this.plugins.length} 个插件)`);
+        this.logger.info(`Bot 已启动 (${this.plugins.length} 个插件, 总耗时 ${Date.now() - startTime}ms)`);
     }
 
     /** 停止:注销全部插件 → 关闭客户端连接。 */
     async stop(): Promise<void> {
         if (!this.started) return;
 
+        const startTime = Date.now();
+        this.logger.info('正在停止 Bot...');
+
         for (const plugin of this.plugins) {
+            const pluginStart = Date.now();
+            this.logger.debug(`插件卸载开始: ${plugin.name}`);
             this.registry.unregister(plugin);
             await plugin.onUnload?.();
+            this.logger.debug(`插件卸载完成: ${plugin.name} (耗时 ${Date.now() - pluginStart}ms)`);
         }
+
         for (const unsub of this.clientUnsubscribers) {
             unsub();
         }
 
         this.client.close();
         this.started = false;
-        this.logger.info('Bot 已停止');
+        this.logger.info(`Bot 已停止 (耗时 ${Date.now() - startTime}ms)`);
     }
 
     /** 监听客户端底层事件,统一记录到日志。 */
     private bindClientEvents(): void {
+        const wsLogger = this.logger.child({ module: 'ws' });
+
         this.clientUnsubscribers.push(
-            this.client.on('open', () => this.logger.info('WebSocket 已连接')),
+            this.client.on('open', () => wsLogger.info('WebSocket 已连接')),
             this.client.on('close', (info) =>
-                this.logger.warn(`WebSocket 已断开: ${info?.code ?? ''} ${info?.reason ?? ''}`.trim()),
+                wsLogger.warn(`WebSocket 已断开: ${info?.code ?? ''} ${info?.reason ?? ''}`.trim()),
             ),
-            this.client.on('error', (err) => this.logger.error(`WebSocket 错误: ${String(err)}`)),
+            this.client.on('error', (err) => wsLogger.error(`WebSocket 错误: ${String(err)}`)),
         );
     }
 }
